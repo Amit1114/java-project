@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Reservation System</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f0f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.2); width: 400px; }
+        h2 { text-align: center; margin-bottom: 20px; }
+        label, select, input { display: block; width: 100%; margin-bottom: 15px; font-size: 16px; }
+        button { padding: 10px; width: 100%; font-size: 16px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Hotel Reservation</h2>
+        <form action="/book" method="post">
+            <label for="hotel">Select Hotel:</label>
+            <select name="hotel" id="hotel">
+                <option value="1">Grand Palace - Mumbai</option>
+                <option value="2">Ocean View - Goa</option>
+            </select>
+
+            <label for="room">Select Room:</label>
+            <select name="room" id="room">
+                <option value="101">Deluxe - ₹4000</option>
+                <option value="102">Suite - ₹6000</option>
+                <option value="201">Standard - ₹3000</option>
+                <option value="202">Luxury - ₹7000</option>
+            </select>
+
+            <label for="name">Your Name:</label>
+            <input type="text" name="name" id="name" required>
+
+            <button type="submit">Book Now</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,149 @@
+import com.sun.net.httpserver.*;
+import java.io.*;
+import java.util.*;
+
+class Hotel {
+    int id;
+    String name;
+    String location;
+    ArrayList<Room> rooms = new ArrayList<>();
+
+    Hotel(int id, String name, String location) {
+        this.id = id;
+        this.name = name;
+        this.location = location;
+    }
+
+    void addRoom(Room room) {
+        rooms.add(room);
+    }
+
+    Room getRoomById(int roomId) {
+        for (Room r : rooms) {
+            if (r.id == roomId && r.isAvailable) return r;
+        }
+        return null;
+    }
+}
+
+class Room {
+    int id;
+    String type;
+    double price;
+    boolean isAvailable = true;
+
+    Room(int id, String type, double price) {
+        this.id = id;
+        this.type = type;
+        this.price = price;
+    }
+}
+
+class Booking {
+    String customerName;
+    Hotel hotel;
+    Room room;
+    String referenceNo;
+
+    Booking(String customerName, Hotel hotel, Room room) {
+        this.customerName = customerName;
+        this.hotel = hotel;
+        this.room = room;
+        this.referenceNo = "REF-" + (int)(Math.random() * 10000);
+        room.isAvailable = false;
+    }
+
+    String getDetails() {
+        return "<h2>Booking Confirmed!</h2>" +
+               "<p>Customer: " + customerName + "</p>" +
+               "<p>Hotel: " + hotel.name + "</p>" +
+               "<p>Room Type: " + room.type + "</p>" +
+               "<p>Price: ₹" + room.price + "</p>" +
+               "<p>Reference No: " + referenceNo + "</p>" +
+               "<a href='/'>Back to Booking Page</a>";
+    }
+}
+
+public class HotelReservationServer {
+
+    static ArrayList<Hotel> hotels = new ArrayList<>();
+
+    public static void main(String[] args) throws Exception {
+
+        // Initialize hotels
+        Hotel h1 = new Hotel(1, "Grand Palace", "Mumbai");
+        h1.addRoom(new Room(101, "Deluxe", 4000));
+        h1.addRoom(new Room(102, "Suite", 6000));
+
+        Hotel h2 = new Hotel(2, "Ocean View", "Goa");
+        h2.addRoom(new Room(201, "Standard", 3000));
+        h2.addRoom(new Room(202, "Luxury", 7000));
+
+        hotels.add(h1);
+        hotels.add(h2);
+
+        // Create HTTP server
+        HttpServer server = HttpServer.create(new java.net.InetSocketAddress(8000), 0);
+
+        // Serve HTML form
+        server.createContext("/", exchange -> {
+            String html = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("index.html")));
+            exchange.getResponseHeaders().add("Content-Type", "text/html");
+            exchange.sendResponseHeaders(200, html.getBytes().length);
+            OutputStream os = exchange.getResponseBody();
+            os.write(html.getBytes());
+            os.close();
+        });
+
+        // Booking handler
+        server.createContext("/book", new BookingHandler());
+
+        server.setExecutor(null);
+        server.start();
+        System.out.println("Server started at http://localhost:8000");
+    }
+
+    static class BookingHandler implements HttpHandler {
+        public void handle(HttpExchange exchange) throws IOException {
+            if ("POST".equals(exchange.getRequestMethod())) {
+                InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), "utf-8");
+                BufferedReader br = new BufferedReader(isr);
+                String formData = br.readLine();
+                Map<String, String> params = parseFormData(formData);
+
+                int hotelId = Integer.parseInt(params.get("hotel"));
+                int roomId = Integer.parseInt(params.get("room"));
+                String name = params.get("name");
+
+                Hotel hotel = hotels.get(hotelId - 1);
+                Room room = hotel.getRoomById(roomId);
+
+                String response;
+                if (room != null) {
+                    Booking booking = new Booking(name, hotel, room);
+                    response = booking.getDetails();
+                } else {
+                    response = "<h2>Sorry, room not available!</h2>" +
+                               "<a href='/'>Back to Booking Page</a>";
+                }
+
+                exchange.getResponseHeaders().add("Content-Type", "text/html");
+                exchange.sendResponseHeaders(200, response.getBytes().length);
+                OutputStream os = exchange.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            }
+        }
+
+        private Map<String, String> parseFormData(String formData) throws UnsupportedEncodingException {
+            Map<String, String> map = new HashMap<>();
+            if(formData == null) return map;
+            String[] pairs = formData.split("&");
+            for (String pair : pairs) {
+                String[] kv = pair.split("=");
+                map.put(kv[0], java.net.URLDecoder.decode(kv[1], "UTF-8"));
+            }
+            return map;
+        }
+    }
+}
